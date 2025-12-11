@@ -149,7 +149,7 @@ async def owner_redirect(client, CallbackQuery: CallbackQuery, _):
         logger.error(f"Error answering callback query: {str(e)}")
         return
 
-    owner_link = "tg://resolve?domain=FcKU4Baar"
+    owner_link = "tg://resolve?domain=imagine_iq"
     try:
         await CallbackQuery.edit_message_text(
             f"||Jᴏɪɴ Tᴏ Cʜᴀɴɴᴇʟ ||\n👉 [ Cʜᴀɴɴᴇʟ  😎]({owner_link})",
