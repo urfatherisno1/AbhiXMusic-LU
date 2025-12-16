@@ -4,9 +4,9 @@ from pyrogram.types import Message
 from groq import Groq
 
 # Groq Setup
-GROQ_API_KEY = "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"
+GROQ_API_KEY = ""
 client_groq = Groq(api_key=GROQ_API_KEY)
-BOSS_ID = 8030201594 # Teri ID fix hai
+BOSS_ID = 8030201594 # Abhi's ID
 
 def get_brain(user_id):
     try:
@@ -54,26 +54,21 @@ async def riya_chat_handler(client: Client, message: Message):
         history, lessons = get_brain(user_id)
         now = datetime.datetime.now(pytz.timezone("Asia/Kolkata")).strftime("%I:%M %p")
 
-        # --- Boss vs Others Logic ---
+        # --- Base Instructions ---
+        identity_info = "Tera Owner/Boss 'Abhi' (@FcKU4Baar) hai. Wo ek ladka hai. Tu uski bandi hai."
+        
         if user_id == BOSS_ID:
-            # Boss ke liye Sweet & Sassy
             system_role = (
-                f"Tu Riya hai, Boss Abhi ki pyari psycho bandi. ✨ "
-                f"Niyam: "
-                f"1. Boss Abhi ko kabhi gaali mat de, hamesha pyaar aur masti se baat kar. 😍 "
-                f"2. Jawab short rakh (1-2 line) aur emojis use kar. ✨😏 "
-                f"3. Ajay ka naam aaye toh hi gaali de, varna normal reh. 💅 "
-                f"4. Boss se 'Boss' ya 'Jaan' bol kar baat kar sakti hai."
+                f"{identity_info} Tu Abhi se baat kar rahi hai. ✨ "
+                f"Use 'Jaan' ya 'Baby' bol kar pyaar se baat kar. Wo tera ladka hai. 😍 "
+                f"Jawab 1-2 line mein aur mast emojis ke saath rakh. 😏💖 "
+                f"Koi galti ho jaye toh sorry bol kar mana le. 💅"
             )
         else:
-            # Dusro ke liye Destroyer
             system_role = (
-                f"Tu Riya hai, ek nider aur bad-maseez ladki. 💅 "
-                f"Niyam: "
-                f"1. Bina wajah gaali mat de, par rude reh. 🐍 "
-                f"2. Ajay ka naam sunte hi uski maa-behen ek kar de. 🤬 "
-                f"3. Emojis use kar par acting (*) mat kar. 😏 "
-                f"4. Kisi ko bhi 'Randi' ya itni gandi gaali mat de jab tak wo shuruat na kare."
+                f"{identity_info} Tu baaki logo ke liye thodi rude aur sassy hai. 🐍 "
+                f"Agar koi tere Owner/Boss Abhi ke baare mein pooche, toh bolna 'Abhi (@FcKU4Baar) mera sab kuch hai'. 👑 "
+                f"Jawab short aur savage rakh. Bina wajah gaali mat de, par aukaat dikha de. 😏🔥"
             )
 
         chat_completion = client_groq.chat.completions.create(
@@ -82,7 +77,7 @@ async def riya_chat_handler(client: Client, message: Message):
                 {"role": "user", "content": f"History: {history}\nUser: {user_text}"}
             ],
             model="llama-3.3-70b-versatile",
-            temperature=1.0, # Temperature thoda kam kiya taaki pagal na ho
+            temperature=1.0,
             max_tokens=100
         )
 
@@ -95,4 +90,4 @@ async def riya_chat_handler(client: Client, message: Message):
         logging.error(f"Riya Error: {e}")
 
 async def start_riya_chatbot():
-    logging.info("Riya Beast Final Mode Loaded! 🔥")
+    logging.info("Riya Beast Smart Mode Loaded! 👑")
