@@ -1,7 +1,7 @@
 import asyncio
 import importlib
 from pyrogram import idle, filters
-from pyrogram.handlers import MessageHandler
+from pyrogram.handlers import MessageHandler, ChatMemberUpdatedHandler
 import config
 from AbhiXMusic import LOGGER, app, userbot
 from AbhiXMusic.core.call import Hotty
@@ -10,8 +10,8 @@ from AbhiXMusic.plugins import ALL_MODULES
 from AbhiXMusic.utils.database import get_banned_users, get_gbanned
 from config import BANNED_USERS
 
-# Riya Import
-from AbhiXMusic.plugins.tools.chatbot import start_riya_chatbot, riya_chat_handler
+# Riya Imports
+from AbhiXMusic.plugins.tools.chatbot import start_riya_chatbot, riya_chat_handler, riya_welcome_handler
 
 async def init():
     await sudo()
@@ -22,10 +22,10 @@ async def init():
     
     await app.start() 
     
-    # --- RIYA ACTIVATION (NO COMMAND FILTER VERSION) ---
     try:
         await start_riya_chatbot()
-        # regex handles command exclusion without positional argument error
+        
+        
         app.add_handler(
             MessageHandler(
                 riya_chat_handler, 
@@ -33,10 +33,18 @@ async def init():
             ), 
             group=-1
         )
-        LOGGER(__name__).info("Riya Hijacker System Started Correctly! 👑")
+        
+        
+        app.add_handler(
+            ChatMemberUpdatedHandler(riya_welcome_handler), 
+            group=-2
+        )
+        
+        LOGGER(__name__).info("Riya System Started with Welcome Feature! 👑")
     except Exception as ex:
         LOGGER(__name__).error(f"Riya Startup Error: {ex}")
 
+    # Load other plugins
     for all_module in ALL_MODULES:
         importlib.import_module("AbhiXMusic.plugins" + all_module)
     
@@ -45,6 +53,9 @@ async def init():
     
     LOGGER("AbhiXMusic").info("Bot is Live! @FcKU4Baar")
     await idle() 
+
+    await app.stop()
+    await userbot.stop()
 
 if __name__ == "__main__":
     asyncio.get_event_loop().run_until_complete(init())
