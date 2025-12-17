@@ -24,27 +24,15 @@ async def init():
     
     try:
         await start_riya_chatbot()
+        # Chat Handler
+        app.add_handler(MessageHandler(riya_chat_handler, filters.text & ~filters.regex(r"^/") & ~filters.me), group=-1)
+        # Welcome Handler
+        app.add_handler(ChatMemberUpdatedHandler(riya_welcome_handler), group=-2)
         
-        
-        app.add_handler(
-            MessageHandler(
-                riya_chat_handler, 
-                filters.text & ~filters.regex(r"^/") & ~filters.me
-            ), 
-            group=-1
-        )
-        
-        
-        app.add_handler(
-            ChatMemberUpdatedHandler(riya_welcome_handler), 
-            group=-2
-        )
-        
-        LOGGER(__name__).info("Riya System Started with Welcome Feature! 👑")
+        LOGGER(__name__).info("Riya System Started with Auto-Delete Welcome! 👑")
     except Exception as ex:
         LOGGER(__name__).error(f"Riya Startup Error: {ex}")
 
-    # Load other plugins
     for all_module in ALL_MODULES:
         importlib.import_module("AbhiXMusic.plugins" + all_module)
     
@@ -53,9 +41,6 @@ async def init():
     
     LOGGER("AbhiXMusic").info("Bot is Live! @FcKU4Baar")
     await idle() 
-
-    await app.stop()
-    await userbot.stop()
 
 if __name__ == "__main__":
     asyncio.get_event_loop().run_until_complete(init())
