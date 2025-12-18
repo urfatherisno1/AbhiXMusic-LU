@@ -36,7 +36,7 @@ from AbhiXMusic.utils.database import (
 )
 from AbhiXMusic.utils.exceptions import AssistantErr
 from AbhiXMusic.utils.formatters import check_duration, seconds_to_min, speed_converter
-from AbhiXMusic.utils.inline.play import stream_markup, stream_markup2
+from AbhiXMusic.utils.inline.play import stream_markup
 from AbhiXMusic.utils.stream.autoclear import auto_clean
 from AbhiXMusic.utils.thumbnails import get_thumb
 from strings import get_string
