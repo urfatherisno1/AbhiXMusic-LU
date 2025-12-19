@@ -13,11 +13,10 @@ from AbhiXMusic.plugins import ALL_MODULES
 from AbhiXMusic.utils.database import get_banned_users, get_gbanned
 from config import BANNED_USERS
 
-# Riya Imports (v48.0)
+# Riya Imports
 from AbhiXMusic.plugins.tools.chatbot import start_riya_chatbot, riya_chat_handler, riya_welcome_handler
 
 async def init():
-    # 1. Basic Setup & Banned Users Load
     if (
         not config.STRING1
         and not config.STRING2
@@ -27,57 +26,48 @@ async def init():
     ):
         LOGGER(__name__).error("Assistant client variables not defined, exiting...")
         exit()
-
+        
     await sudo()
     try:
         users = await get_gbanned()
         for user_id in users: BANNED_USERS.add(user_id)
         users = await get_banned_users()
         for user_id in users: BANNED_USERS.add(user_id)
-    except: pass
-    
-    # 2. Start Main Bot (App)
-    await app.start() 
-    
-    # 3. --- Riya System Activation ---
+    except:
+        pass
+        
+    await app.start()
+
+    # --- Riya Handlers Setup (Music Plugins se pehle) ---
     try:
         await start_riya_chatbot()
-        # Riya Handlers Setup
         app.add_handler(MessageHandler(riya_chat_handler, filters.text & ~filters.regex(r"^/") & ~filters.me), group=-1)
         app.add_handler(ChatMemberUpdatedHandler(riya_welcome_handler), group=-2)
-        LOGGER("AbhiXMusic").info("Riya v48.0 (Super Memory) Live! 👑")
+        LOGGER("AbhiXMusic").info("Riya v48.0 System Started! 👑")
     except Exception as ex:
         LOGGER("AbhiXMusic").error(f"Riya Startup Error: {ex}")
 
-    # 4. Load Music Plugins
+    # --- IMPORTANT: Plugins ko pehle load karna (Tere mast chalne wale bot jaisa) ---
     for all_module in ALL_MODULES:
         importlib.import_module("AbhiXMusic.plugins" + all_module)
     LOGGER("AbhiXMusic.plugins").info("Successfully Imported Modules...")
-    
-    # 5. Start Assistant & Call Core
-    await userbot.start() 
-    await Hotty.start() 
-    
-    # 6. --- FIX: Assistant Invite & Stream Call ---
+
+    await userbot.start()
+    await Hotty.start()
+
+    # --- Assistant ko VC mein pakad kar rakhne wala logic ---
     try:
-        # Ye line assistant ko group mein invite karne aur active rakhne mein madad karegi
         await Hotty.stream_call("https://graph.org/file/e999c40cb700e7c684b75.mp4")
     except NoActiveGroupCall:
         LOGGER("AbhiXMusic").error("Please turn on the videochat of your log group/channel.")
-    except Exception as e:
-        LOGGER("AbhiXMusic").error(f"Stream Call Error: {e}")
-    
-    # 7. Start Decorators (Auto-Leave/Auto-Invite logic)
-    try:
-        await Hotty.decorators()
-        LOGGER("AbhiXMusic").info("Hotty Decorators Started! ✅")
-    except Exception as e:
-        LOGGER("AbhiXMusic").error(f"Decorators Error: {e}")
+    except:
+        pass
+
+    # Decorators sabse aakhir mein (Taki saare plugins ready rahein)
+    await Hotty.decorators()
     
     LOGGER("AbhiXMusic").info("Bot is Live! @FcKU4Baar")
-    
-    # 8. Idle till Stop
-    await idle() 
+    await idle()
     await app.stop()
     await userbot.stop()
     LOGGER("AbhiXMusic").info("Stopping AbhiXMusic Bot...")
