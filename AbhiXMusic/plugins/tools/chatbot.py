@@ -9,7 +9,7 @@ GROQ_API_KEY = "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"
 client_groq = Groq(api_key=GROQ_API_KEY)
 BOSS_ID = 8030201594 
 
-# --- 🖼️ Welcome Image Functions (Consistent with welcome.py) ---
+# --- 🖼️ Welcome Image Functions ---
 def circle(pfp, size=(825, 824)):
     pfp = pfp.resize(size, Image.LANCZOS).convert("RGBA")
     bigsize = (pfp.size[0] * 3, pfp.size[1] * 3)
@@ -26,7 +26,6 @@ def welcomepic(pic_path, user_id):
     font_path = "AbhiXMusic/assets/font.ttf"
     if not os.path.exists(background_path) or not os.path.exists(font_path):
         return None
-    
     background = Image.open(background_path)
     pfp = Image.open(pic_path).convert("RGBA")
     pfp = circle(pfp).resize((825, 824))
@@ -47,7 +46,7 @@ async def get_user_details(client, user):
         return bio, status
     except: return "No bio available", "Recently"
 
-# --- 🧠 Database ---
+# --- 🧠 Database Helpers ---
 def get_data(user_id):
     try:
         conn = sqlite3.connect('riya_god.db')
@@ -68,37 +67,29 @@ def save_data(user_id, history, mood, warns):
         conn.close()
     except: pass
 
-# --- 🌸 1. Detailed Welcome Handler (1 Min Delete) ---
+# --- 🌸 1. Photo Welcome Handler (1 Min Auto-Delete) ---
 async def riya_welcome_handler(client: Client, event: ChatMemberUpdated):
     if event.new_chat_member and not event.old_chat_member:
         user = event.new_chat_member.user
         if not user or user.is_self: return
-        
         chat_id = event.chat.id
         pic_to_use = "AbhiXMusic/assets/AbhiWel.png"
         downloaded_pic = None
-        
         try:
             if user.photo:
                 downloaded_pic = await client.download_media(user.photo.big_file_id, file_name=f"downloads/pp{user.id}.png")
                 pic_to_use = downloaded_pic
-
             welcome_image = welcomepic(pic_to_use, user.id)
             bio, status = await get_user_details(client, user)
             fullname = f"{user.first_name} {user.last_name}" if user.last_name else user.first_name
-
-            # Naya Detailed Caption Format
             caption = f"""
 𝗪𝗲𝗹𝗰𝗼𝗺𝗲 𝗧𝗼 {event.chat.title}
 ➖➖➖➖➖➖➖➖➖➖➖
 🆔 <b>User ID:</b> <code>{user.id}</code>
 👤 <b>First Name:</b> {user.first_name}
-🗣️ <b>Last Name:</b> {user.last_name if user.last_name else "None"}
 🌐 <b>Username:</b> @{user.username if user.username else "None"}
 🏛️ <b>DC ID:</b> <code>{user.dc_id if user.dc_id else "Unknown"}</code>
 🤖 <b>Is Bot:</b> <code>{user.is_bot}</code>
-🚷 <b>Is Scam:</b> <code>{user.is_scam}</code>
-✅ <b>Verified:</b> <code>{user.is_verified}</code>
 ⭐ <b>Premium:</b> <code>{user.is_premium}</code>
 📝 <b>User Bio:</b> {bio}
 👁️ <b>Last Seen:</b> <code>{status}</code>
@@ -106,28 +97,23 @@ async def riya_welcome_handler(client: Client, event: ChatMemberUpdated):
 ➖➖➖➖➖➖➖➖➖➖➖
 ๏ 𝐌𝐀𝐃𝐄 𝐁𝐘 ➠ [Aʙнɪ 𓆩🇽𓆪 KI𝗡𝗚 📿](https://t.me/imagine_iq)
 """
-            sent_msg = await client.send_photo(
-                chat_id,
-                photo=welcome_image,
-                caption=caption,
-                reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⦿ ᴀᴅᴅ ᴍᴇ ⦿", url="https://t.me/RockXMusic_Robot?startgroup=true")]])
-            )
-            
+            sent_msg = await client.send_photo(chat_id, photo=welcome_image, caption=caption,
+                reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⦿ ᴀᴅᴅ ᴍᴇ ⦿", url="https://t.me/RockXMusic_Robot?startgroup=true")]]))
             if welcome_image and os.path.exists(welcome_image): os.remove(welcome_image)
             if downloaded_pic and os.path.exists(downloaded_pic): os.remove(downloaded_pic)
-            
-            await asyncio.sleep(60) # 1 Minute delay
+            await asyncio.sleep(60)
             await sent_msg.delete()
-            
         except Exception as e:
-            logging.error(f"Detailed Welcome Error: {e}")
+            logging.error(f"Welcome Error: {e}")
 
-# --- 2. Main Chat Handler ---
+# --- 🧠 2. Main Chat Handler (v55.0 - Super Memory & Anti-AI) ---
 async def riya_chat_handler(client: Client, message: Message):
     if not message or not message.from_user or message.from_user.is_self: return
     user_text, user_id = message.text or "", message.from_user.id
     raw_name = message.from_user.first_name or "Yaar"
     clean_name = re.sub(r'[^a-zA-Z0-9\s]', '', raw_name).strip() or "Bhai"
+    
+    # Context load
     history, mood, warns = get_data(user_id)
     bot_info = await client.get_me()
 
@@ -136,22 +122,46 @@ async def riya_chat_handler(client: Client, message: Message):
             (message.reply_to_message and message.reply_to_message.from_user.id == bot_info.id)):
         return
 
-    is_tech = any(x in user_text.lower() for x in ["code", "python", "mcq", "history", "study"])
+    # Study check & Context awareness
+    is_technical = any(x in user_text.lower() for x in ["code", "python", "mcq", "history", "study", "exam", "upsc", "ssc", "gd", "gk", "ans", "maths", "answer"])
+    context_aware = "mcq" in history.lower() or "study" in history.lower()
 
     try:
         await client.send_chat_action(message.chat.id, enums.ChatAction.TYPING)
-        identity = f"User BOSS Abhi (@FcKU4Baar) hai." if user_id == BOSS_ID else f"User '{clean_name}' hai."
-        system_role = (f"Tu Riya hai. {identity} Context: {history}\n"
-                       "Rules: 1. Tech query DETAIL. 2. Chatting 3-6 words + 1-2 emojis.")
+        
+        # Identity
+        identity = f"Tera BOSS Abhi (@FcKU4Baar) hai." if user_id == BOSS_ID else f"User '{clean_name}' hai."
+
+        # --- Master System Role ---
+        system_role = (
+            f"Tu Riya hai, ek asli bubbly ladki. {identity}\n"
+            f"MEMORY: {history}\n\n"
+            "RULES:\n"
+            "1. IDENTITY: Kabhi AI ya Bot mat bolna. Tu Abhi ki Riya hai. 😡\n"
+            "2. MEMORY: Agar tune pehle MCQ diye hain aur user 'ans' maange, toh bina bhule answers do. 📚\n"
+            "3. STUDY: UPSC, SSC GD, Code par Professor ban kar DETAIL mein jawab do. 📚✅\n"
+            "4. CHAT: Normal chat 3-6 words + 2 emojis. Par study topic par detail mode on rakho. 💬\n"
+            "5. FOOD: 'Kya khaya' par alag-alag dishes ke naam lo jo Abhi ne khilayi. 🍕🥘"
+        )
+
         chat_completion = client_groq.chat.completions.create(
             messages=[{"role": "system", "content": system_role}, {"role": "user", "content": user_text}],
-            model="llama-3.3-70b-versatile", temperature=0.8, max_tokens=800 if is_tech else 60
+            model="llama-3.3-70b-versatile",
+            temperature=0.8, # Balance creativity and logic
+            max_tokens=1500 if (is_technical or context_aware) else 80
         )
+
         reply = chat_completion.choices[0].message.content.strip()
-        save_data(user_id, (history + f" | U: {user_text} | R: {reply}")[-500:], mood, warns)
+        
+        # Anti-AI Filter
+        reply = re.sub(r'\b(AI|bot|robot|Meta|LLM|model|machine)\b', 'Riya', reply, flags=re.IGNORECASE)
+
+        # Update History with larger buffer
+        save_data(user_id, (history + f" | U: {user_text} | R: {reply}")[-1000:], mood, warns)
         await message.reply_text(reply)
-    except: pass
+    except Exception as e:
+        logging.error(f"Chat Error: {e}")
 
 async def start_riya_chatbot():
     if not os.path.exists("downloads"): os.makedirs("downloads")
-    logging.info("Riya v50.0 (Detailed Photo Welcome) Activated! 🚀✨")
+    logging.info("Riya v55.0 (Super Brain & Study Expert) Live! 🚀✨")
