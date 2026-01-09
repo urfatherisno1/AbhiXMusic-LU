@@ -13,7 +13,7 @@ async def Yukkibin(text):
             return f"https://hastebin.com/{data['key']}"
 
 @app.on_message(
-    filters.command(["vcuser", "vcusers", "vcmember", "vcmembers"]) & filters.admin
+    filters.command(["vcuser", "vcusers", "vcmember", "vcmembers"])
 )
 async def vc_members(client, message):
     msg = await message.reply_text("🔍 ꜰᴇᴛᴄʜɪɴɢ ᴠᴄ ᴍᴇᴍʙᴇʀꜱ...")
