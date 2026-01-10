@@ -68,10 +68,10 @@ def stream_markup_timer(_, vidid, chat_id, played, dur):
         ],
         [
             InlineKeyboardButton(
-                text="🥀 Oᴡɴᴇʀ Jɪ 🥀", url=f"https://t.me/FcKU4Baar"
+                text="🥀 Oᴡɴᴇʀ Jɪ 🥀", url=f"https://t.me/Llmbotmbot?start=ref8030201594"
             ),
             InlineKeyboardButton(
-                text="🥀 Cʜᴀᴛ 🥀", url=f"https://t.me/imagine_iq"
+                text="🥀 Cʜᴀᴛ 🥀", url=f"https://t.me/+xG4l3TPDXA0wN2M1"
             ),
         ],
         [InlineKeyboardButton(text=_["CLOSE_BUTTON"], callback_data="close")],
@@ -90,10 +90,10 @@ def stream_markup(_, videoid, chat_id):
         ],
         [
             InlineKeyboardButton(
-                text="🥀 Oᴡɴᴇʀ Jɪ 🥀", url=f"https://t.me/FcKU4Baar"
+                text="🥀 Oᴡɴᴇʀ Jɪ 🥀", url=f"https://t.me/Llmbotmbot?start=ref8030201594"
             ),
             InlineKeyboardButton(
-                text="🥀 Cʜᴀᴛ 🥀", url=f"https://t.me/imagine_iq"
+                text="🥀 Cʜᴀᴛ 🥀", url=f"https://t.me/+xG4l3TPDXA0wN2M1"
             ),
         ],
         [InlineKeyboardButton(text=_["CLOSE_BUTTON"], callback_data="close")],
@@ -245,10 +245,10 @@ def stream_markup2(_, chat_id):
         ],
 [
             InlineKeyboardButton(
-                text="🥀 Oᴡɴᴇʀ Jɪ 🥀", url=f"https://t.me/FcKU4Baar"
+                text="🥀 Oᴡɴᴇʀ Jɪ 🥀", url=f"https://t.me/Llmbotmbot?start=ref8030201594"
             ),
             InlineKeyboardButton(
-                text="🥀 Cʜᴀᴛ 🥀", url=f"https://t.me/imagine_iq"
+                text="🥀 Cʜᴀᴛ 🥀", url=f"https://t.me/+xG4l3TPDXA0wN2M1"
             ),
         ],
 
