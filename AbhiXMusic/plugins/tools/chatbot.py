@@ -4,9 +4,14 @@ from pyrogram.types import Message, ChatMemberUpdated, InlineKeyboardMarkup, Inl
 from PIL import ImageDraw, Image, ImageChops, ImageFont
 from groq import Groq
 
-# Groq Setup
-GROQ_API_KEY = "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"
-client_groq = Groq(api_key=GROQ_API_KEY)
+# --- 🔑 Groq API Setup (Multi-Key Failover) ---
+# Yahan teeno keys daal di hain. Code bari-bari try karega.
+GROQ_API_KEYS = [
+    "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",
+    "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",
+    "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"
+]
+
 BOSS_ID = 8030201594 
 
 # --- 🖼️ Welcome Image Functions ---
@@ -144,15 +149,28 @@ async def riya_chat_handler(client: Client, message: Message):
             "5. FOOD: 'Kya khaya' par alag-alag dishes ke naam lo jo Abhi ne khilayi. 🍕🥘"
         )
 
-        chat_completion = client_groq.chat.completions.create(
-            messages=[{"role": "system", "content": system_role}, {"role": "user", "content": user_text}],
-            model="llama-3.3-70b-versatile",
-            temperature=0.8, # Balance creativity and logic
-            max_tokens=1500 if (is_technical or context_aware) else 80
-        )
+        reply = None
+        # --- API Rotation Logic ---
+        # Ye loop ek ke baad ek API key try karega jab tak success na mile
+        for api_key in GROQ_API_KEYS:
+            try:
+                client_groq = Groq(api_key=api_key) # Har baar naye key se initialize hoga
+                chat_completion = client_groq.chat.completions.create(
+                    messages=[{"role": "system", "content": system_role}, {"role": "user", "content": user_text}],
+                    model="llama-3.3-70b-versatile",
+                    temperature=0.8,
+                    max_tokens=1500 if (is_technical or context_aware) else 80
+                )
+                reply = chat_completion.choices[0].message.content.strip()
+                if reply:
+                    break # Agar reply mil gaya to loop tod do (baaki keys try mat karo)
+            except Exception as e:
+                logging.error(f"API Key Failed: {e}. Switching to next key...")
+                continue # Agar fail hua to agli key try karo
 
-        reply = chat_completion.choices[0].message.content.strip()
-        
+        if not reply:
+            reply = "Abhi mood nahi hai baat karne ka... (API Error)"
+
         # Anti-AI Filter
         reply = re.sub(r'\b(AI|bot|robot|Meta|LLM|model|machine)\b', 'Riya', reply, flags=re.IGNORECASE)
 
