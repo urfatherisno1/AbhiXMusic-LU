@@ -4,6 +4,9 @@ from typing import Dict, List, Union
 from AbhiXMusic import userbot
 from AbhiXMusic.core.mongo import mongodb, pymongodb
 
+# 🔥 FIX: 'db' ki jagah 'mongodb' use karna hai
+chattopdb = mongodb.chattopdb 
+
 authdb = mongodb.adminauth
 authuserdb = mongodb.authuser
 autoenddb = mongodb.autoend
