@@ -22,7 +22,39 @@ from AbhiXMusic.utils.inline import (
 )
 from AbhiXMusic.utils.logger import play_logs
 from AbhiXMusic.utils.stream.stream import stream
+# 🔥 DATABASE IMPORTS ADDED (Stats ke liye)
+from AbhiXMusic.utils.database import (
+    add_served_chat,
+    add_served_user,
+    get_particulars,
+    update_particular_top,
+    update_user_top,
+    get_userss,
+)
 from config import BANNED_USERS, lyrical
+
+# 🔥 HELPER FUNCTION TO UPDATE STATS
+async def update_stats(chat_id, user_id, vidid, title):
+    try:
+        # Group Stats
+        chat_stats = await get_particulars(chat_id)
+        if str(vidid) in chat_stats:
+            count = chat_stats[str(vidid)]["spot"] + 1
+        else:
+            count = 1
+        new_data = {"spot": count, "title": title}
+        await update_particular_top(chat_id, str(vidid), new_data)
+        
+        # User Stats
+        user_stats = await get_userss(user_id)
+        if str(vidid) in user_stats:
+            count = user_stats[str(vidid)]["spot"] + 1
+        else:
+            count = 1
+        new_user_data = {"spot": count, "title": title}
+        await update_user_top(user_id, str(vidid), new_user_data)
+    except:
+        pass
 
 
 @app.on_message(
@@ -72,6 +104,14 @@ async def play_commnd(
         if message.reply_to_message
         else None
     )
+    
+    # 🔥 UPDATE SERVED CHATS/USERS LOGIC 🔥
+    try:
+        await add_served_chat(chat_id)
+        await add_served_user(user_id)
+    except:
+        pass
+
     if audio_telegram:
         if audio_telegram.file_size > 104857600:
             return await mystic.edit_text(_["play_5"])
@@ -323,7 +363,10 @@ async def play_commnd(
                 _["play_18"],
                 reply_markup=InlineKeyboardMarkup(buttons),
             )
-        slider = True
+        
+        # 🔥 YAHAN SLIDER SEARCH LOGIC THA, WO HATA DIYA
+        # Ab ye code direct search karega aur pehla result play karega
+        slider = False 
         query = message.text.split(None, 1)[1]
         if "-v" in query:
             query = query.replace("-v", "")
@@ -332,8 +375,13 @@ async def play_commnd(
         except:
             return await mystic.edit_text(_["play_3"])
         streamtype = "youtube"
-    if str(playmode) == "Direct":
+    
+    # 🔥 FORCE DIRECT PLAY LOGIC (Slider Bypass) 🔥
+    if str(playmode) == "Direct" or True: 
         if not plist_type:
+            # 🔥 UPDATE STATS
+            await update_stats(chat_id, user_id, details["vidid"], details["title"])
+
             if details["duration_min"]:
                 duration_sec = time_to_seconds(details["duration_min"])
                 if duration_sec > config.DURATION_LIMIT:
@@ -374,7 +422,10 @@ async def play_commnd(
         await mystic.delete()
         return await play_logs(message, streamtype=streamtype)
     else:
+        # Unreachable code technically but kept for structure
         if plist_type:
+            # Update stats
+            await update_stats(chat_id, user_id, details["vidid"], details["title"])
             ran_hash = "".join(
                 random.choices(string.ascii_uppercase + string.digits, k=10)
             )
@@ -394,42 +445,6 @@ async def play_commnd(
                 reply_markup=InlineKeyboardMarkup(buttons),
             )
             return await play_logs(message, streamtype=f"Playlist : {plist_type}")
-        else:
-            if slider:
-                buttons = slider_markup(
-                    _,
-                    track_id,
-                    message.from_user.id,
-                    query,
-                    0,
-                    "c" if channel else "g",
-                    "f" if fplay else "d",
-                )
-                await mystic.delete()
-                await message.reply_photo(
-                    photo=details["thumb"],
-                    caption=_["play_10"].format(
-                        details["title"].title(),
-                        details["duration_min"],
-                    ),
-                    reply_markup=InlineKeyboardMarkup(buttons),
-                )
-                return await play_logs(message, streamtype=f"Searched on Youtube")
-            else:
-                buttons = track_markup(
-                    _,
-                    track_id,
-                    message.from_user.id,
-                    "c" if channel else "g",
-                    "f" if fplay else "d",
-                )
-                await mystic.delete()
-                await message.reply_photo(
-                    photo=img,
-                    caption=cap,
-                    reply_markup=InlineKeyboardMarkup(buttons),
-                )
-                return await play_logs(message, streamtype=f"URL Searched Inline")
 
 
 @app.on_callback_query(filters.regex("MusicStream") & ~BANNED_USERS)
@@ -460,6 +475,10 @@ async def play_music(client, CallbackQuery, _):
         details, track_id = await YouTube.track(vidid, True)
     except:
         return await mystic.edit_text(_["play_3"])
+    
+    # Stats Update
+    await update_stats(chat_id, CallbackQuery.from_user.id, details["vidid"], details["title"])
+
     if details["duration_min"]:
         duration_sec = time_to_seconds(details["duration_min"])
         if duration_sec > config.DURATION_LIMIT:
@@ -515,6 +534,7 @@ async def piyush_check(client, CallbackQuery):
 @app.on_callback_query(filters.regex("HottyPlaylists") & ~BANNED_USERS)
 @languageCB
 async def play_playlists_command(client, CallbackQuery, _):
+    # Playlist code - unchanged logic but stats update
     callback_data = CallbackQuery.data.strip()
     callback_request = callback_data.split(None, 1)[1]
     (
@@ -602,6 +622,7 @@ async def play_playlists_command(client, CallbackQuery, _):
 @app.on_callback_query(filters.regex("slider") & ~BANNED_USERS)
 @languageCB
 async def slider_queries(client, CallbackQuery, _):
+    # This remains to handle button clicks if they exist
     callback_data = CallbackQuery.data.strip()
     callback_request = callback_data.split(None, 1)[1]
     (
@@ -660,4 +681,4 @@ async def slider_queries(client, CallbackQuery, _):
         )
         return await CallbackQuery.edit_message_media(
             media=med, reply_markup=InlineKeyboardMarkup(buttons)
-)
+        )
