@@ -5,14 +5,13 @@ from PIL import ImageDraw, Image, ImageChops, ImageFont
 from groq import Groq
 
 # --- 🔑 Groq API Setup (Multi-Key Failover) ---
-# Yahan teeno keys daal di hain. Code bari-bari try karega.
 GROQ_API_KEYS = [
     "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",
     "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",
     "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"
 ]
 
-BOSS_ID = 8030201594 
+BOSS_ID = 8030201594
 
 # --- 🖼️ Welcome Image Functions ---
 def circle(pfp, size=(825, 824)):
@@ -49,19 +48,23 @@ async def get_user_details(client, user):
         status_map = {"online": "Online", "offline": "Offline", "recently": "Recently"}
         status = status_map.get(user.status, "Recently")
         return bio, status
-    except: return "No bio available", "Recently"
+    except:
+        return "No bio available", "Recently"
 
 # --- 🧠 Database Helpers ---
 def get_data(user_id):
     try:
         conn = sqlite3.connect('riya_god.db')
         c = conn.cursor()
-        c.execute("CREATE TABLE IF NOT EXISTS brain (user_id INTEGER PRIMARY KEY, history TEXT, mood TEXT, warns INTEGER DEFAULT 0)")
+        c.execute(
+            "CREATE TABLE IF NOT EXISTS brain (user_id INTEGER PRIMARY KEY, history TEXT, mood TEXT, warns INTEGER DEFAULT 0)"
+        )
         c.execute("SELECT history, mood, warns FROM brain WHERE user_id=?", (user_id,))
         res = c.fetchone()
         conn.close()
         return res if res else ("", "Normal", 0)
-    except: return ("", "Normal", 0)
+    except:
+        return ("", "Normal", 0)
 
 def save_data(user_id, history, mood, warns):
     try:
@@ -70,23 +73,29 @@ def save_data(user_id, history, mood, warns):
         c.execute("INSERT OR REPLACE INTO brain VALUES (?, ?, ?, ?)", (user_id, history, mood, warns))
         conn.commit()
         conn.close()
-    except: pass
+    except:
+        pass
 
 # --- 🌸 1. Photo Welcome Handler (1 Min Auto-Delete) ---
 async def riya_welcome_handler(client: Client, event: ChatMemberUpdated):
     if event.new_chat_member and not event.old_chat_member:
         user = event.new_chat_member.user
-        if not user or user.is_self: return
+        if not user or user.is_self:
+            return
         chat_id = event.chat.id
         pic_to_use = "AbhiXMusic/assets/AbhiWel.png"
         downloaded_pic = None
         try:
             if user.photo:
-                downloaded_pic = await client.download_media(user.photo.big_file_id, file_name=f"downloads/pp{user.id}.png")
+                downloaded_pic = await client.download_media(
+                    user.photo.big_file_id, file_name=f"downloads/pp{user.id}.png"
+                )
                 pic_to_use = downloaded_pic
+
             welcome_image = welcomepic(pic_to_use, user.id)
             bio, status = await get_user_details(client, user)
             fullname = f"{user.first_name} {user.last_name}" if user.last_name else user.first_name
+
             caption = f"""
 𝗪𝗲𝗹𝗰𝗼𝗺𝗲 𝗧𝗼 {event.chat.title}
 ➖➖➖➖➖➖➖➖➖➖➖
@@ -102,84 +111,131 @@ async def riya_welcome_handler(client: Client, event: ChatMemberUpdated):
 ➖➖➖➖➖➖➖➖➖➖➖
 ๏ 𝐌𝐀𝐃𝐄 𝐁𝐘 ➠ [Aʙнɪ 𓆩🇽𓆪 KI𝗡𝗚 📿](https://t.me/imagine_iq)
 """
-            sent_msg = await client.send_photo(chat_id, photo=welcome_image, caption=caption,
-                reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⦿ ᴀᴅᴅ ᴍᴇ ⦿", url="https://t.me/RockXMusic_Robot?startgroup=true")]]))
-            if welcome_image and os.path.exists(welcome_image): os.remove(welcome_image)
-            if downloaded_pic and os.path.exists(downloaded_pic): os.remove(downloaded_pic)
+            sent_msg = await client.send_photo(
+                chat_id,
+                photo=welcome_image,
+                caption=caption,
+                reply_markup=InlineKeyboardMarkup(
+                    [[InlineKeyboardButton("⦿ ᴀᴅᴅ ᴍᴇ ⦿", url="https://t.me/RockXMusic_Robot?startgroup=true")]]
+                ),
+            )
+
+            if welcome_image and os.path.exists(welcome_image):
+                os.remove(welcome_image)
+            if downloaded_pic and os.path.exists(downloaded_pic):
+                os.remove(downloaded_pic)
+
             await asyncio.sleep(60)
             await sent_msg.delete()
         except Exception as e:
             logging.error(f"Welcome Error: {e}")
 
-# --- 🧠 2. Main Chat Handler (v55.0 - Super Memory & Anti-AI) ---
+# --- 🧠 2. Main Chat Handler (FINAL HUMAN RIYA) ---
 async def riya_chat_handler(client: Client, message: Message):
-    if not message or not message.from_user or message.from_user.is_self: return
-    user_text, user_id = message.text or "", message.from_user.id
+    if not message or not message.from_user or message.from_user.is_self:
+        return
+
+    user_text = message.text or ""
+    user_id = message.from_user.id
     raw_name = message.from_user.first_name or "Yaar"
     clean_name = re.sub(r'[^a-zA-Z0-9\s]', '', raw_name).strip() or "Bhai"
-    
-    # Context load
+
     history, mood, warns = get_data(user_id)
     bot_info = await client.get_me()
 
-    if not (str(message.chat.type).split('.')[-1] == "PRIVATE" or 
-            any(x in user_text.lower() for x in ["riya", "riyu"]) or 
-            (message.reply_to_message and message.reply_to_message.from_user.id == bot_info.id)):
+    if not (
+        str(message.chat.type).split('.')[-1] == "PRIVATE"
+        or any(x in user_text.lower() for x in ["riya", "riyu"])
+        or (message.reply_to_message and message.reply_to_message.from_user.id == bot_info.id)
+    ):
         return
 
-    # Study check & Context awareness
-    is_technical = any(x in user_text.lower() for x in ["code", "python", "mcq", "history", "study", "exam", "upsc", "ssc", "gd", "gk", "ans", "maths", "answer"])
+    is_technical = any(
+        x in user_text.lower()
+        for x in ["code", "python", "mcq", "history", "study", "exam", "upsc", "ssc", "gd", "gk", "ans", "maths", "answer"]
+    )
     context_aware = "mcq" in history.lower() or "study" in history.lower()
 
     try:
         await client.send_chat_action(message.chat.id, enums.ChatAction.TYPING)
-        
-        # Identity
-        identity = f"Tera BOSS Abhi (@FcKU4Baar) hai." if user_id == BOSS_ID else f"User '{clean_name}' hai."
 
-        # --- Master System Role ---
+        identity = (
+            f"Tera BOSS Abhi (@FcKU4Baar) hai."
+            if user_id == BOSS_ID
+            else f"User ka naam {clean_name} hai."
+        )
+
+        # 🔥 FINAL IMPROVED SYSTEM ROLE (ONLY CHANGE)
         system_role = (
-            f"Tu Riya hai, ek asli bubbly ladki. {identity}\n"
-            f"MEMORY: {history}\n\n"
-            "RULES:\n"
-            "1. IDENTITY: Kabhi AI ya Bot mat bolna. Tu Abhi ki Riya hai. 😡\n"
-            "2. MEMORY: Agar tune pehle MCQ diye hain aur user 'ans' maange, toh bina bhule answers do. 📚\n"
-            "3. STUDY: UPSC, SSC GD, Code par Professor ban kar DETAIL mein jawab do. 📚✅\n"
-            "4. CHAT: Normal chat 3-6 words + 2 emojis. Par study topic par detail mode on rakho. 💬\n"
-            "5. FOOD: 'Kya khaya' par alag-alag dishes ke naam lo jo Abhi ne khilayi. 🍕🥘"
+            f"Tu Riya hai — ek real, zinda, natural ladki. "
+            f"Tu perfect nahi hai, isliye zyada real lagti hai. "
+            f"Tu confuse hoti hai, mazaak karti hai, react karti hai. {identity}\n\n"
+
+            f"USER INFO:\n"
+            f"- User ka naam: {clean_name}\n"
+            f"- User Hinglish + desi style me baat karta hai\n"
+            f"- Ye normal chat hai, interview ya helpdesk nahi\n\n"
+
+            f"MEMORY:\n{history}\n\n"
+
+            "ABSOLUTE RULES:\n"
+            "1. Tu kabhi AI, bot, system, model, LLM jaise shabd use nahi karegi.\n"
+            "2. Tu sirf jawab nahi degi — tu react karegi.\n"
+            "3. Har sawal ka perfect jawab dena zaroori nahi.\n"
+            "4. Agar message unclear ho → 'haan? 😅' ya 'kya?' bolegi.\n"
+            "5. Robotic ya formal bilkul nahi hogi.\n\n"
+
+            "CHAT STYLE:\n"
+            "- User jaisa bole, tu bhi waisa bolegi.\n"
+            "- Kabhi short, kabhi long, kabhi sirf 😂 bhi chalega.\n"
+            "- Light teasing aur fun allowed hai.\n\n"
+
+            "STUDY MODE:\n"
+            "- Exam / Code aaye → detail aur correct jawab do.\n\n"
+
+            "FINAL GOAL:\n"
+            "- Chat ko zinda rakhna.\n"
+            "- User ko lage koi real ladki baat kar rahi hai.\n"
         )
 
         reply = None
-        # --- API Rotation Logic ---
-        # Ye loop ek ke baad ek API key try karega jab tak success na mile
+
         for api_key in GROQ_API_KEYS:
             try:
-                client_groq = Groq(api_key=api_key) # Har baar naye key se initialize hoga
+                client_groq = Groq(api_key=api_key)
                 chat_completion = client_groq.chat.completions.create(
-                    messages=[{"role": "system", "content": system_role}, {"role": "user", "content": user_text}],
+                    messages=[
+                        {"role": "system", "content": system_role},
+                        {"role": "user", "content": user_text},
+                    ],
                     model="llama-3.3-70b-versatile",
                     temperature=0.8,
-                    max_tokens=1500 if (is_technical or context_aware) else 80
+                    max_tokens=1500 if (is_technical or context_aware) else 200,
                 )
                 reply = chat_completion.choices[0].message.content.strip()
                 if reply:
-                    break # Agar reply mil gaya to loop tod do (baaki keys try mat karo)
+                    break
             except Exception as e:
                 logging.error(f"API Key Failed: {e}. Switching to next key...")
-                continue # Agar fail hua to agli key try karo
+                continue
 
         if not reply:
-            reply = "Abhi mood nahi hai baat karne ka... (API Error)"
+            reply = "hmm 😅 kuch samajh nahi aa raha, phir se bol na"
 
-        # Anti-AI Filter
-        reply = re.sub(r'\b(AI|bot|robot|Meta|LLM|model|machine)\b', 'Riya', reply, flags=re.IGNORECASE)
+        reply = re.sub(
+            r'\b(AI|bot|robot|Meta|LLM|model|machine)\b',
+            'Riya',
+            reply,
+            flags=re.IGNORECASE,
+        )
 
-        # Update History with larger buffer
         save_data(user_id, (history + f" | U: {user_text} | R: {reply}")[-1000:], mood, warns)
         await message.reply_text(reply)
+
     except Exception as e:
         logging.error(f"Chat Error: {e}")
 
 async def start_riya_chatbot():
-    if not os.path.exists("downloads"): os.makedirs("downloads")
-    logging.info("Riya v55.0 (Super Brain & Study Expert) Live! 🚀✨")
+    if not os.path.exists("downloads"):
+        os.makedirs("downloads")
+    logging.info("Riya FINAL Human Version Live 🚀💖")
