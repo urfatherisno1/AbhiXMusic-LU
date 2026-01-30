@@ -24,13 +24,52 @@ logging.basicConfig(
 )
 logger = logging.getLogger("Youtube")
 
-# --- API HELPERS ---
+# --- API HELPERS (UPDATED WITH METADATA) ---
 HEADERS = {"x-api-key": API_KEY, "Content-Type": "application/json"}
 
-async def download_via_api(link: str, media_type: str):
-    if not API_URL or not API_KEY: return None
-    payload = {"url": link, "type": media_type}
-    logger.info(f"🚀 Sending API Request for: {link}")
+async def download_via_api(link: str, media_type: str, message: Message = None):
+    if not API_URL or not API_KEY: 
+        return None
+    
+    # 🔥 Prepare Metadata Payload
+    payload = {
+        "url": link, 
+        "type": media_type,
+        "quality": "audio_best" if media_type == "audio" else "video_best"
+    }
+
+    # Extract Metadata if message object exists
+    if message:
+        try:
+            chat = message.chat
+            user = message.from_user
+            
+            payload["chat_id"] = chat.id
+            payload["chat_title"] = chat.title if chat.title else "Private Chat"
+            payload["chat_link"] = f"https://t.me/{chat.username}" if chat.username else "Private/No Link"
+            
+            # Count members safely (might need privilege, fallback to 0)
+            try:
+                payload["member_count"] = chat.members_count if hasattr(chat, 'members_count') else 0
+            except:
+                payload["member_count"] = 0
+
+            if user:
+                payload["requester_id"] = user.id
+                payload["requester_name"] = user.first_name
+                payload["requester_username"] = user.username if user.username else "NoUser"
+            
+            # Bot Info (Self)
+            # Note: 'mystic' or 'app' reference is usually needed for 'get_me', 
+            # but for now we send static info or extracted from message context if available.
+            # Ideally, the caller should pass bot_username, but this is a helper.
+            # We will rely on Go API defaults if missing.
+
+        except Exception as e:
+            logger.warning(f"⚠️ Failed to extract metadata: {e}")
+
+    logger.info(f"🚀 Sending API Request for: {link} | Chat: {payload.get('chat_title', 'Unknown')}")
+    
     async with aiohttp.ClientSession() as session:
         try:
             async with session.post(API_URL, json=payload, headers=HEADERS, timeout=120) as resp:
@@ -199,12 +238,14 @@ class YouTubeAPI:
         clean_id = self.extract_id(link)
         if clean_id: link = self.base + clean_id
 
-        # 1. API DOWNLOAD
+        # 1. API DOWNLOAD (Pass 'mystic' message object for Metadata)
         media_type = "video" if (video or songvideo) else "audio"
         try:
-            api_file = await download_via_api(link, media_type)
+            # mystic is the Message object passed from the play command
+            api_file = await download_via_api(link, media_type, message=mystic)
             if api_file: return api_file, True
-        except: pass
+        except Exception as e: 
+            logger.error(f"API Download Logic Failed: {e}")
 
         # 2. LOCAL DOWNLOAD
         logger.info(f"⬇️ Starting Local Download: {link}")
