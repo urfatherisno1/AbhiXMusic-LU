@@ -6,7 +6,7 @@ import random
 import logging
 import aiohttp
 import subprocess
-import glob  # 🔥 Yeh missing tha tere snippet mein
+import glob 
 from typing import Union
 
 import yt_dlp
@@ -50,7 +50,7 @@ async def download_via_api(link: str, media_type: str, message: Message = None):
             })
         except: pass
 
-    # 📡 TERMINAL DEBUG LOGS
+   
     print(f"\n📡 [API REQUEST] | TYPE: {media_type.upper()} | URL: {link}")
     
     async with aiohttp.ClientSession() as session:
@@ -133,22 +133,22 @@ class YouTubeAPI:
         except: return None, None
 
     async def download(self, link, mystic, video=False, **kwargs):
-        # 🔥 FIXED vplay logic: Don't let variables be unbound
+       
         songvideo = kwargs.get("songvideo")
         is_video = bool(video or songvideo)
         m_type = "video" if is_video else "audio"
 
-        # 1. TRY API STREAM FIRST
+        
         api_url = await download_via_api(link, m_type, mystic)
         if api_url: return api_url, True
 
-        # 2. LOCAL FALLBACK
+        
         logger.info(f"⬇️ Local Fallback (API Failed): {link}")
         loop = asyncio.get_running_loop()
         cookies = cookie_txt_file()
         
         def local_dl_cli():
-            # Check is_video here for correct format
+            
             fmt = ["-f", "bestaudio/best", "--extract-audio", "--audio-format", "mp3"] if not is_video else ["-f", "bestvideo+bestaudio/best", "--merge-output-format", "mp4"]
             try:
                 id_cmd = ["yt-dlp", "--js-runtimes", "node", "--get-id", "--", link]
