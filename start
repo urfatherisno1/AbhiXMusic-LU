@@ -1,1 +1,14 @@
+#!/bin/bash
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+
+current_ver=$(node -v 2>/dev/null)
+if [[ "$current_ver" != v20* ]]; then
+    echo "🔄 Node.js v20 not detected (Found: $current_ver). Switching..."
+    nvm install 20
+    nvm use 20
+    nvm alias default 20
+else
+    echo "✅ Node.js v20 is active."
+fi
 python3 -m AbhiXMusic
